@@ -294,17 +294,16 @@
         function renderUpgradeList() {
             upgradesListEl.innerHTML = '';
             
-            // Manual click headers and injection
             const clickHeader = document.createElement('h2');
             clickHeader.className = 'category-title';
             clickHeader.textContent = 'Active Matrix (Manual Click)';
             upgradesListEl.appendChild(clickHeader);
 
             for (const key in game.upgrades) {
+                if (game.upgrades[key].type === 'click') createCard(key);
+            }
+
 Use code with caution.
-if (game.upgrades[key].type === 'click') createCard(key);
-}
-// Idle infrastructure headers and injection
 const idleHeader = document.createElement('h2');
 idleHeader.className = 'category-title';
 idleHeader.textContent = 'Automation Subsystem (Idle)';
@@ -320,8 +319,8 @@ card.className = 'upgrade-card';
 card.id = card-${key};
 card.innerHTML = <div class="upgrade-info"> <h3>${upg.name}</h3> <p>${upg.desc}</p> <p class="cost-text" id="cost-${key}">Cost: --</p> </div> <button class="buy-btn" id="btn-${key}"> Buy (<span id="lvl-${key}">0</span>) </button>;
 upgradesListEl.appendChild(card);
-// Safer dynamic execution listener rather than inline onclick strings
-document.getElementById(btn-${key}).addEventListener('click', () => {
+document.getElementById(btn-${key}).addEventListener('click', (e) => {
+e.stopPropagation(); // Stops upgrade buying from accidentally triggering a generic click
 buyUpgrade(key);
 });
 }
@@ -354,11 +353,11 @@ btn.disabled = game.credits < cost;
 }
 }
 // --- FLOATING HIT TEXTS ---
-function createFloatingText(e) {
+function createFloatingText(clientX, clientY) {
 let x, y;
-if (e && e.clientX && e.clientY) {
-x = e.clientX;
-y = e.clientY;
+if (clientX !== undefined && clientY !== undefined && clientX > 0 && clientY > 0) {
+x = clientX;
+y = clientY;
 } else {
 const rect = clickTarget.getBoundingClientRect();
 x = rect.left + (rect.width / 2);
@@ -391,10 +390,11 @@ game.credits = parsed.credits || 0;
 recalculateTotals();
 }
 }
-// --- CORE RUN EVENT EVENT LISTENERS ---
+// --- CORE RUN EVENTS ---
 clickTarget.addEventListener('click', (e) => {
+// Failsafe execution layer: Counter goes up no matter what mouse properties return
 game.credits += game.clickPower;
-createFloatingText(e);
+createFloatingText(e.clientX, e.clientY);
 updateUI();
 });
 resetBtn.addEventListener('click', () => {
@@ -416,4 +416,5 @@ setInterval(saveGame, 15000);
 loadGame();
 renderUpgradeList();
 updateUI();
+
 
